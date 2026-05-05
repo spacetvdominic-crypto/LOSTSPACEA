@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space TV - Worker Dashboard</title>
+    <title>Space TV - Full Dashboard</title>
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 80px; display: none; }
         .h { background: #0066cc; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -10,47 +10,54 @@
         .refresh-btn { position: absolute; right: 15px; background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; }
         
         .container { padding: 12px; max-width: 600px; margin: auto; }
-        .section-header { font-size: 1rem; font-weight: bold; margin: 25px 0 12px 0; display: flex; align-items: center; text-transform: uppercase; letter-spacing: 1px; color: #0066cc; }
-        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; background: #0066cc; }
+        .section-header { font-size: 0.9rem; font-weight: bold; margin: 25px 0 10px 0; display: flex; align-items: center; text-transform: uppercase; letter-spacing: 1px; }
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
         
-        .card { background: white; margin-bottom: 15px; padding: 18px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-top: 5px solid #0066cc; position: relative; }
-        .card h3 { margin: 0 0 8px 0; color: #333; font-size: 1.2rem; }
-        .card p { margin: 6px 0; color: #666; font-size: 0.95rem; line-height: 1.4; }
-        .tel-link { color: #0066cc; text-decoration: none; font-weight: bold; background: #eef6ff; padding: 2px 6px; border-radius: 4px; }
+        .card { background: white; margin-bottom: 12px; padding: 16px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 6px solid #ccc; position: relative; }
+        .card h3 { margin: 0 0 5px 0; color: #333; font-size: 1.1rem; }
+        .card p { margin: 4px 0; color: #666; font-size: 0.9rem; line-height: 1.4; }
+        .status-tag { position: absolute; top: 12px; right: 12px; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         
-        .btn { display: block; color: white; text-align: center; padding: 16px; text-decoration: none; margin-top: 15px; border-radius: 10px; font-weight: bold; border: none; width: 100%; font-size: 1rem; cursor: pointer; transition: transform 0.1s; background: #0066cc; }
-        .btn:active { transform: scale(0.98); }
-        
+        .btn { display: block; color: white; text-align: center; padding: 14px; text-decoration: none; margin-top: 12px; border-radius: 8px; font-weight: bold; border: none; width: 100%; font-size: 0.9rem; cursor: pointer; }
+        .btn-blue { background: #0066cc; }
+        .btn-orange { background: #e67e22; }
+        .btn-gray { background: #95a5a6; cursor: not-allowed; }
+
         .loading { text-align: center; padding: 40px; color: #999; font-style: italic; }
-        .fab { position: fixed; bottom: 20px; right: 20px; background: #27ae60; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; text-decoration: none; border: none; z-index: 99; }
+        .fab { position: fixed; bottom: 20px; right: 20px; background: #27ae60; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-decoration: none; z-index: 99; }
     </style>
 </head>
 <body>
 
     <div class="h">
         <button class="logout-btn" onclick="logout()">LOGOUT</button>
-        <h2 style="margin:0; font-size: 1.1rem;">Worker Dashboard</h2>
+        <h2 style="margin:0; font-size: 1.1rem;">Service Dashboard</h2>
         <button class="refresh-btn" onclick="loadJobs()">🔄</button>
     </div>
 
     <div class="container">
-        <div id="greeting" style="margin-bottom: 10px; font-weight: bold; color: #555;"></div>
+        <div id="greeting" style="margin-bottom: 5px; font-weight: bold; color: #555;"></div>
 
-        <div class="section-header"><span class="dot"></span> ACTIVE ASSIGNMENTS</div>
-        <div id="pendingList"><p class="loading">Loading jobs...</p></div>
+        <!-- ACTIVE SECTION -->
+        <div class="section-header" style="color: #0066cc;"><span class="dot" style="background:#0066cc;"></span> Pending Work</div>
+        <div id="pendingList"></div>
+
+        <!-- RESCHEDULED SECTION -->
+        <div class="section-header" style="color: #e67e22;"><span class="dot" style="background:#e67e22;"></span> Rescheduled</div>
+        <div id="rescheduleList"></div>
+
+        <!-- CANCELLED SECTION -->
+        <div class="section-header" style="color: #e74c3c;"><span class="dot" style="background:#e74c3c;"></span> Cancelled / On Hold</div>
+        <div id="cancelList"></div>
     </div>
 
-    <!-- Quick access for private/field jobs -->
     <a href="/front-desk" class="fab">+</a>
 
     <script>
-        // --- 1. SECURITY & IDENTITY ---
         const userRole = localStorage.getItem("userRole");
-        // Fallback to "Technician" if username is null or missing
         const username = localStorage.getItem("username") || "Technician";
 
         if (!userRole || userRole !== "Worker") {
-            // Redirect to appropriate page or login if role is missing/incorrect
             window.location.href = userRole === "Office" ? "/front-desk" : "/";
         } else {
             document.body.style.display = "block";
@@ -58,59 +65,61 @@
         }
 
         function logout() {
-            localStorage.clear(); // Clear all data to prevent "null" user issues
+            localStorage.clear();
             window.location.href = "/";
         }
 
-        // --- 2. JOB NAVIGATION ---
         async function startJob(id, name, tel, loc, prob) {
-            // Log start time to API if needed
-            fetch(`/api/start-job?rowId=${id}`);
-            
-            // Navigate to the action page with sanitized parameters
             const url = `/work-job?rowId=${id}&name=${encodeURIComponent(name)}&tel=${encodeURIComponent(tel)}&loc=${encodeURIComponent(loc)}&prob=${encodeURIComponent(prob)}`;
             window.location.href = url;
         }
 
-        // --- 3. UI RENDERING ---
         function createCard(j) {
+            let config = { color: "#0066cc", label: "Pending", btnClass: "btn-blue", canWork: true };
+
+            if (j.status === "Rescheduled") {
+                config = { color: "#e67e22", label: "Rescheduled", btnClass: "btn-orange", canWork: true };
+            } else if (j.status === "Cancel") {
+                config = { color: "#e74c3c", label: "Cancelled", btnClass: "btn-gray", canWork: false };
+            }
+
             return `
-                <div class="card">
+                <div class="card" style="border-left-color: ${config.color}">
+                    <span class="status-tag" style="background:${config.color}; color:white;">${config.label}</span>
                     <h3>${j.customer || 'Unnamed Client'}</h3>
-                    <p><b>Tel:</b> <a href="tel:${j.tel}" class="tel-link">${j.tel || 'N/A'}</a></p>
+                    <p><b>Tel:</b> ${j.tel || 'N/A'}</p>
                     <p><b>Loc:</b> ${j.loc || 'N/A'}</p>
-                    <p><b>Service:</b> <i>${j.prob || 'Technical Service'}</i></p>
-                    <button onclick="startJob('${j.rowId}', '${j.customer}', '${j.tel}', '${j.loc}', '${j.prob}')" 
-                            class="btn">
-                        START WORK
+                    <p><b>Service:</b> ${j.prob || 'Standard'}</p>
+                    <button onclick="${config.canWork ? `startJob('${j.rowId}', '${j.customer}', '${j.tel}', '${j.loc}', '${j.prob}')` : ''}" 
+                            class="btn ${config.btnClass}" ${!config.canWork ? 'disabled' : ''}>
+                        ${config.canWork ? 'START WORK' : 'LOCKED'}
                     </button>
                 </div>`;
         }
 
-        // --- 4. DATA FETCHING & FILTERING ---
         async function loadJobs() {
             const pList = document.getElementById('pendingList');
+            const rList = document.getElementById('rescheduleList');
+            const cList = document.getElementById('cancelList');
             
             try {
                 const res = await fetch('/api/jobs');
                 const data = await res.json();
                 
-                // STRICT FILTER: Only show jobs explicitly marked as "Pending"
-                // This automatically hides "Rescheduled", "Cancel", and "Done"
-                const activeJobs = data.pending.filter(j => j.status === "Pending");
+                // Sort them into their respective buckets
+                const pending = data.pending.filter(j => j.status === "Pending");
+                const rescheduled = data.pending.filter(j => j.status === "Rescheduled");
+                const cancelled = data.pending.filter(j => j.status === "Cancel");
 
-                if (activeJobs.length === 0) {
-                    pList.innerHTML = '<p class="loading">No active assignments. Tap 🔄 to refresh.</p>';
-                } else {
-                    pList.innerHTML = activeJobs.map(j => createCard(j)).join('');
-                }
+                pList.innerHTML = pending.length ? pending.map(j => createCard(j)).join('') : '<p class="loading">None</p>';
+                rList.innerHTML = rescheduled.length ? rescheduled.map(j => createCard(j)).join('') : '<p class="loading">None</p>';
+                cList.innerHTML = cancelled.length ? cancelled.map(j => createCard(j)).join('') : '<p class="loading">None</p>';
 
             } catch (err) {
-                pList.innerHTML = '<p class="loading" style="color:red;">Error connecting to server. Please refresh.</p>';
+                pList.innerHTML = '<p style="color:red; text-align:center;">Load failed. Try again.</p>';
             }
         }
 
-        // Initialize
         loadJobs();
     </script>
 </body>
