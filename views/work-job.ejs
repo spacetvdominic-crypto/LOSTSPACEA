@@ -4,107 +4,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Work Job - Space TV</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
-        .container { background: white; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
-        .job-detail { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border-left: 4px solid #0066cc; }
-        
-        label { display: block; font-weight: bold; margin-top: 15px; color: #333; font-size: 0.85rem; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; }
-        input:focus, textarea:focus { border-color: #0066cc; }
-        
-        .btn-submit { width: 100%; padding: 16px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 25px; transition: background 0.3s; }
-        .btn-submit:disabled { background: #95a5a6; }
-        .back-link { display: block; text-align: center; margin-top: 15px; color: #888; text-decoration: none; font-size: 0.9rem; }
+        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; margin: 0; }
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        label { font-weight: bold; display: block; margin-top: 15px; color: #333; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+        input:focus, select:focus, textarea:focus { border-color: #0066cc; outline: none; }
+        .sub { background: #0066cc; color: white; border: none; padding: 15px; width: 100%; margin-top: 25px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1.1rem; }
+        .sub:disabled { background: #ccc; }
+        .back-btn { display: block; text-align: center; margin-top: 15px; color: #888; text-decoration: none; font-size: 0.9rem; }
     </style>
 </head>
 <body>
+    <div class="box">
+        <!-- Data passed from the dashboard URL -->
+        <h2 id="cN" style="color:#0066cc; margin-top:0; margin-bottom:5px;"><%= query.name %></h2>
+        <p id="cT" style="font-weight:bold; margin-top:0; color:#555;">Tel: <%= query.tel %></p>
+        <p style="font-size: 0.85rem; color: #777;">Original Request: <%= query.prob %></p>
 
-    <div class="container">
-        <div class="header">
-            <h2 style="margin:0; color:#0066cc;">Complete Service</h2>
-        </div>
-
-        <div class="job-detail">
-            <strong>Customer:</strong> <%= query.name %><br>
-            <strong>Problem:</strong> <%= query.prob %><br>
-            <strong>Location:</strong> <%= query.loc %>
-        </div>
-
-        <form id="workForm">
-            <label>Final Amount Charged (GHS)</label>
-            <input type="number" id="amt" step="0.01" placeholder="0.00" required>
-
-            <label>Job Status</label>
-            <select id="status">
-                <option value="Done">Done (Fully Completed)</option>
-                <option value="Rescheduled">Rescheduled (Come Back Later)</option>
-                <option value="Cancel">Cancelled (Client Declined)</option>
+        <form id="f">
+            <label>Current Status</label>
+            <select id="s">
+                <option value="In Progress">In Progress</option>
+                <option value="Done" selected>Done</option>
+                <option value="Cancel">Cancel</option>
             </select>
 
-            <label>Work Done / Remarks</label>
-            <textarea id="remarks" rows="2" placeholder="e.g. Realigned dish and replaced LNB"><%= query.prob %></textarea>
+            <label>Remarks (Select One)</label>
+            <select id="r">
+                <option value="Completed Successfully">Completed Successfully</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Return Job">Return Job</option>
+                <option value="Rescheduled">Rescheduled</option>
+                <option value="Already working">Already working</option>
+                <option value="Customer did not pick">Customer did not pick</option>
+                <option value="Faulty decoder">Faulty decoder</option>
+            </select>
 
-            <label>Internal Notes (Not on receipt)</label>
-            <textarea id="notes" rows="2" placeholder="Any extra info for the office..."></textarea>
+            <label>Additional Notes</label>
+            <textarea id="n" rows="3" placeholder="Enter any extra details here..."></textarea>
 
-            <button type="button" class="btn-submit" onclick="processWork()" id="submitBtn">FINISH & VIEW RECEIPT</button>
+            <label>Amount Charged (GHS)</label>
+            <input type="number" id="a" value="0" step="0.01">
+
+            <button type="submit" class="sub" id="btn">SUBMIT UPDATE</button>
+            <a href="/dashboard" class="back-btn">Back to Dashboard</a>
         </form>
-
-        <a href="/dashboard" class="back-link">Return to Dashboard</a>
     </div>
 
     <script>
-        async function processWork() {
-            const btn = document.getElementById('submitBtn');
-            const amt = document.getElementById('amt').value;
+        const form = document.getElementById('f');
+        const btn = document.getElementById('btn');
 
-            if (!amt || amt <= 0) {
-                alert("Please enter a valid amount charged.");
-                return;
-            }
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            // Disable button to prevent double clicks
+            btn.disabled = true;
+            btn.innerText = "SAVING...";
 
-            // Prepare the receipt data for localStorage
-            const receiptData = {
+            const data = {
+                rowId: "<%= query.rowId %>",
                 name: "<%= query.name %>",
-                installer: localStorage.getItem("username") || "Space TV Tech",
-                amount: amt,
-                remarks: document.getElementById('remarks').value,
-                notes: document.getElementById('notes').value
+                status: document.getElementById('s').value,
+                amount: document.getElementById('a').value,
+                remarks: document.getElementById('r').value,
+                notes: document.getElementById('n').value,
+                // Using 'username' from login, or 'installerName' as fallback
+                installer: localStorage.getItem('username') || localStorage.getItem('installerName') || "Space TV Tech"
             };
 
-            // Save data locally so the Receipt Page can read it
-            localStorage.setItem('tempReceipt', JSON.stringify(receiptData));
-
-            btn.innerText = "SAVING TO DATABASE...";
-            btn.disabled = true;
+            // 1. Save data locally for the final-receipt.ejs to read
+            localStorage.setItem('tempReceipt', JSON.stringify(data));
 
             try {
-                // Submit to Server (Updates Google Sheets)
-                const response = await fetch('/submit-job', {
+                // 2. Submit to your Render/Google server
+                const res = await fetch('/submit-job', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        rowId: "<%= query.rowId %>",
-                        amount: receiptData.amount,
-                        status: document.getElementById('status').value,
-                        remarks: receiptData.remarks,
-                        installer: receiptData.installer
-                    })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
                 });
 
-                if (response.ok) {
-                    // Success! Go to the receipt animation
-                    window.location.href = '/receipt-flip';
+                if(res.ok) {
+                    // 3. If "Done", go to receipt. Otherwise, go back to dashboard.
+                    window.location.href = data.status === "Done" ? '/receipt-flip' : '/dashboard';
                 } else {
-                    throw new Error("Server error");
+                    alert("Failed to save. Check your connection.");
+                    btn.disabled = false;
+                    btn.innerText = "SUBMIT UPDATE";
                 }
             } catch (err) {
-                alert("Error saving work. Please check your internet connection.");
-                btn.innerText = "FINISH & VIEW RECEIPT";
+                console.error(err);
+                alert("An error occurred. Please try again.");
                 btn.disabled = false;
+                btn.innerText = "SUBMIT UPDATE";
             }
-        }
+        };
     </script>
 </body>
 </html>
