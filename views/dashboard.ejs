@@ -29,8 +29,6 @@
     </div>
 
     <div class="container">
-        <div id="greeting" style="font-weight:bold; color:#555; margin-bottom:10px;"></div>
-
         <div class="section-header" style="color: #0066cc;"><span class="dot" style="background:#0066cc;"></span> PENDING / ON HOLD</div>
         <div id="pendingList"><p class="loading">Fetching jobs...</p></div>
 
@@ -39,26 +37,19 @@
     </div>
 
     <script>
-        // SECURITY CHECK - Checking both possible flags
-        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-        const userRole = localStorage.getItem("userRole");
-
-        if (!isLoggedIn && !userRole) {
+        if (localStorage.getItem("isLoggedIn") !== "true") {
             window.location.href = "/";
         } else {
             document.body.style.display = "block";
-            const username = localStorage.getItem("username") || "Technician";
-            document.getElementById('greeting').innerText = `Welcome, ${username}`;
         }
 
         function logout() {
-            localStorage.clear();
+            localStorage.removeItem("isLoggedIn");
             window.location.href = "/";
         }
 
         async function startJob(id, name, tel, loc, prob) {
-            // Updated to match your API route
-            fetch(`/api/start-job?rowId=${id}`);
+            await fetch(`/api/start-job?rowId=${id}`);
             window.location.href = `/work-job?rowId=${id}&name=${name}&tel=${tel}&loc=${loc}&prob=${prob}`;
         }
 
@@ -85,17 +76,13 @@
         async function loadJobs() {
             const pList = document.getElementById('pendingList');
             const rList = document.getElementById('rescheduleList');
-            
             try {
                 const res = await fetch('/api/jobs');
                 const data = await res.json();
                 
-                // FIXED: Now correctly pulls from 'allJobs' provided by your script
-                const jobs = data.allJobs || [];
-                
-                // Filtering the unified list into the display sections
-                const pending = jobs.filter(j => j.status === "Pending" || j.status === "Cancel" || j.status === "In Progress");
-                const rescheduled = jobs.filter(j => j.status === "Rescheduled");
+                // Matches the V4.0 script structure
+                const pending = data.pending || [];
+                const rescheduled = data.rescheduled || [];
 
                 pList.innerHTML = pending.length ? '' : '<p class="loading">No pending jobs.</p>';
                 rList.innerHTML = rescheduled.length ? '' : '<p class="loading">No rescheduled jobs.</p>';
@@ -104,7 +91,7 @@
                 rescheduled.forEach(j => rList.insertAdjacentHTML('beforeend', createCard(j, "#e67e22")));
 
             } catch (err) {
-                pList.innerHTML = '<p class="loading" style="color:red;">Error connecting to server. Please refresh.</p>';
+                pList.innerHTML = '<p class="loading" style="color:red;">Error connecting to server.</p>';
             }
         }
 
