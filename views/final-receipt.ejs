@@ -1,27 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space TV Receipt</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .receipt { border: 2px solid #333; padding: 20px; max-width: 400px; margin: auto; }
-        .h { text-align: center; border-bottom: 2px solid #eee; margin-bottom: 20px; }
-        .row { display: flex; justify-content: space-between; margin: 10px 0; }
+        body { background:#555; display:flex; flex-direction:column; align-items:center; padding:20px; font-family:monospace; }
+        .r { background:white; width:100%; max-width:350px; padding:25px; box-sizing: border-box; position: relative; border-radius: 4px; }
+        .row { display:flex; justify-content:space-between; margin:10px 0; border-bottom:1px dashed #ddd; padding-bottom: 5px; }
+        .momo-box { background: #f0f7ff; border: 1px solid #0066cc; padding: 10px; margin: 20px 0; font-size: 0.8rem; text-align: center; color: #003366; }
+        .btn-group { width: 100%; max-width: 350px; margin-top: 20px; }
+        button { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; font-family: sans-serif; }
+        .print-btn { background: #333; color: white; }
+        .back-btn { background: #0066cc; color: white; }
+        @media print { .btn-group { display: none; } body { background: white; padding: 0; } }
     </style>
 </head>
 <body>
-    <div class="receipt">
-        <div class="h">
-            <h2>SPACE TV</h2>
-            <p>Quality Signal Solutions</p>
+    <div class="r">
+        <h2 style="text-align:center; margin:0; color:#0066cc;">SPACE TV</h2>
+        <h3 style="text-align:center; margin-bottom:5px;">OFFICIAL RECEIPT</h3>
+        <p style="text-align:center; font-size:0.75rem; margin:0;">0243 326 023 / 0544 913 868</p>
+        
+        <div style="margin-top:20px;">
+            <div class="row"><span>Date:</span><span id="d"></span></div>
+            <div class="row"><span>Customer:</span><span id="n" style="font-weight:bold;"></span></div>
+            <div class="row"><span>Installer:</span><span id="s"></span></div>
+            
+            <div style="margin:15px 0; font-size:0.9rem; line-height:1.4;">
+                <strong>Service:</strong> <span id="rem"></span><br>
+                <strong>Notes:</strong> <span id="not"></span>
+            </div>
+            
+            <h2 style="text-align:center; border-top:2px solid #000; padding-top:10px; margin-top:20px;">GHS <span id="amt"></span></h2>
         </div>
-        <div class="row"><span>Customer:</span> <b><%= query.name %></b></div>
-        <div class="row"><span>Service:</span> <b><%= query.prob %></b></div>
-        <div class="row"><span>Note:</span> <b><%= query.rem %></b></div>
-        <hr>
-        <div class="row" style="font-size: 1.4rem;"><span>TOTAL:</span> <b>₵<%= query.amt %></b></div>
-        <p style="text-align:center; margin-top:30px; font-size:0.8rem;">Thank you for choosing Space TV!</p>
-        <button onclick="window.location.href='/dashboard'" style="width:100%; padding:10px; margin-top:10px;">Back to Jobs</button>
+
+        <div class="momo-box">
+            <strong>PAYMENT NOTICE:</strong><br>
+            Kindly make all payments via Company MoMo for security and verification.<br>
+            <strong>0243 326 023</strong>
+        </div>
+        
+        <p style="text-align:center; font-style:italic; font-size:0.7rem;">"Where Excellent Performance Matters"</p>
     </div>
+
+    <div class="btn-group">
+        <button class="print-btn" onclick="window.print()">PRINT / SAVE PDF</button>
+        <button class="back-btn" onclick="window.location.href='/dashboard'">BACK TO JOBS</button>
+    </div>
+
+    <script>
+        const receiptJson = localStorage.getItem('tempReceipt');
+        if(receiptJson){
+            const data = JSON.parse(receiptJson);
+            document.getElementById('d').innerText = new Date().toLocaleDateString();
+            document.getElementById('n').innerText = data.name;
+            document.getElementById('s').innerText = data.installer;
+            document.getElementById('rem').innerText = data.remarks;
+            document.getElementById('not').innerText = data.notes || "None";
+            document.getElementById('amt').innerText = parseFloat(data.amount).toFixed(2);
+        } else {
+            document.body.innerHTML = "<h3>No receipt data found.</h3><a href='/dashboard'>Return to Dashboard</a>";
+        }
+    </script>
 </body>
 </html>
