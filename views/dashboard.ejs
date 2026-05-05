@@ -2,52 +2,47 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space TV - Full Dashboard</title>
+    <title>Space TV - Dashboard</title>
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 80px; display: none; }
-        .h { background: #0066cc; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .logout-btn { position: absolute; left: 15px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
-        .refresh-btn { position: absolute; right: 15px; background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; }
+        .h { background: #0066cc; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .logout-btn { position: absolute; left: 15px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .refresh-btn { position: absolute; right: 15px; background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
         
         .container { padding: 12px; max-width: 600px; margin: auto; }
-        .section-header { font-size: 0.9rem; font-weight: bold; margin: 25px 0 10px 0; display: flex; align-items: center; text-transform: uppercase; letter-spacing: 1px; }
-        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .section-header { font-size: 0.85rem; font-weight: bold; margin: 20px 0 10px 0; text-transform: uppercase; display: flex; align-items: center; }
+        .dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
         
-        .card { background: white; margin-bottom: 12px; padding: 16px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 6px solid #ccc; position: relative; }
-        .card h3 { margin: 0 0 5px 0; color: #333; font-size: 1.1rem; }
-        .card p { margin: 4px 0; color: #666; font-size: 0.9rem; line-height: 1.4; }
-        .status-tag { position: absolute; top: 12px; right: 12px; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .card { background: white; margin-bottom: 12px; padding: 16px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ccc; position: relative; }
+        .status-tag { position: absolute; top: 12px; right: 12px; font-size: 0.6rem; padding: 2px 6px; border-radius: 3px; color: white; font-weight: bold; }
         
-        .btn { display: block; color: white; text-align: center; padding: 14px; text-decoration: none; margin-top: 12px; border-radius: 8px; font-weight: bold; border: none; width: 100%; font-size: 0.9rem; cursor: pointer; }
+        .btn { display: block; color: white; text-align: center; padding: 12px; text-decoration: none; margin-top: 10px; border-radius: 6px; font-weight: bold; border: none; width: 100%; cursor: pointer; }
         .btn-blue { background: #0066cc; }
         .btn-orange { background: #e67e22; }
-        .btn-gray { background: #95a5a6; cursor: not-allowed; }
+        .btn-gray { background: #bdc3c7; cursor: not-allowed; }
 
-        .loading { text-align: center; padding: 40px; color: #999; font-style: italic; }
-        .fab { position: fixed; bottom: 20px; right: 20px; background: #27ae60; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-decoration: none; z-index: 99; }
+        .loading { text-align: center; padding: 20px; color: #999; font-size: 0.9rem; }
+        .fab { position: fixed; bottom: 20px; right: 20px; background: #27ae60; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
     <div class="h">
         <button class="logout-btn" onclick="logout()">LOGOUT</button>
-        <h2 style="margin:0; font-size: 1.1rem;">Service Dashboard</h2>
+        <h2 style="margin:0; font-size: 1rem;">Space TV Portal</h2>
         <button class="refresh-btn" onclick="loadJobs()">🔄</button>
     </div>
 
     <div class="container">
-        <div id="greeting" style="margin-bottom: 5px; font-weight: bold; color: #555;"></div>
+        <div id="greeting" style="font-weight:bold; color:#555; margin-bottom:10px;"></div>
 
-        <!-- ACTIVE SECTION -->
-        <div class="section-header" style="color: #0066cc;"><span class="dot" style="background:#0066cc;"></span> Pending Work</div>
+        <div class="section-header" style="color:#0066cc;"><span class="dot" style="background:#0066cc;"></span> Pending</div>
         <div id="pendingList"></div>
 
-        <!-- RESCHEDULED SECTION -->
-        <div class="section-header" style="color: #e67e22;"><span class="dot" style="background:#e67e22;"></span> Rescheduled</div>
+        <div class="section-header" style="color:#e67e22;"><span class="dot" style="background:#e67e22;"></span> Rescheduled</div>
         <div id="rescheduleList"></div>
 
-        <!-- CANCELLED SECTION -->
-        <div class="section-header" style="color: #e74c3c;"><span class="dot" style="background:#e74c3c;"></span> Cancelled / On Hold</div>
+        <div class="section-header" style="color:#e74c3c;"><span class="dot" style="background:#e74c3c;"></span> Cancelled</div>
         <div id="cancelList"></div>
     </div>
 
@@ -57,6 +52,7 @@
         const userRole = localStorage.getItem("userRole");
         const username = localStorage.getItem("username") || "Technician";
 
+        // Security Gate
         if (!userRole || userRole !== "Worker") {
             window.location.href = userRole === "Office" ? "/front-desk" : "/";
         } else {
@@ -69,54 +65,52 @@
             window.location.href = "/";
         }
 
-        async function startJob(id, name, tel, loc, prob) {
-            const url = `/work-job?rowId=${id}&name=${encodeURIComponent(name)}&tel=${encodeURIComponent(tel)}&loc=${encodeURIComponent(loc)}&prob=${encodeURIComponent(prob)}`;
-            window.location.href = url;
-        }
-
         function createCard(j) {
-            let config = { color: "#0066cc", label: "Pending", btnClass: "btn-blue", canWork: true };
+            let color = "#0066cc";
+            let btnClass = "btn-blue";
+            let canWork = true;
 
             if (j.status === "Rescheduled") {
-                config = { color: "#e67e22", label: "Rescheduled", btnClass: "btn-orange", canWork: true };
+                color = "#e67e22";
+                btnClass = "btn-orange";
             } else if (j.status === "Cancel") {
-                config = { color: "#e74c3c", label: "Cancelled", btnClass: "btn-gray", canWork: false };
+                color = "#e74c3c";
+                btnClass = "btn-gray";
+                canWork = false;
             }
 
             return `
-                <div class="card" style="border-left-color: ${config.color}">
-                    <span class="status-tag" style="background:${config.color}; color:white;">${config.label}</span>
-                    <h3>${j.customer || 'Unnamed Client'}</h3>
-                    <p><b>Tel:</b> ${j.tel || 'N/A'}</p>
-                    <p><b>Loc:</b> ${j.loc || 'N/A'}</p>
-                    <p><b>Service:</b> ${j.prob || 'Standard'}</p>
-                    <button onclick="${config.canWork ? `startJob('${j.rowId}', '${j.customer}', '${j.tel}', '${j.loc}', '${j.prob}')` : ''}" 
-                            class="btn ${config.btnClass}" ${!config.canWork ? 'disabled' : ''}>
-                        ${config.canWork ? 'START WORK' : 'LOCKED'}
+                <div class="card" style="border-left-color: ${color}">
+                    <span class="status-tag" style="background:${color}">${j.status}</span>
+                    <h3 style="margin:0 0 5px 0;">${j.customer}</h3>
+                    <p style="margin:2px 0;"><b>Loc:</b> ${j.loc}</p>
+                    <p style="margin:2px 0;"><b>Issue:</b> ${j.prob}</p>
+                    <button onclick="${canWork ? `goToWork('${j.rowId}','${j.customer}','${j.tel}','${j.loc}','${j.prob}')` : ''}" 
+                            class="btn ${btnClass}" ${!canWork ? 'disabled' : ''}>
+                        ${canWork ? 'START WORK' : 'LOCKED'}
                     </button>
                 </div>`;
         }
 
+        function goToWork(id, name, tel, loc, prob) {
+            window.location.href = `/work-job?rowId=${id}&name=${encodeURIComponent(name)}&tel=${encodeURIComponent(tel)}&loc=${encodeURIComponent(loc)}&prob=${encodeURIComponent(prob)}`;
+        }
+
         async function loadJobs() {
-            const pList = document.getElementById('pendingList');
-            const rList = document.getElementById('rescheduleList');
-            const cList = document.getElementById('cancelList');
-            
             try {
                 const res = await fetch('/api/jobs');
                 const data = await res.json();
-                
-                // Sort them into their respective buckets
-                const pending = data.pending.filter(j => j.status === "Pending");
-                const rescheduled = data.pending.filter(j => j.status === "Rescheduled");
-                const cancelled = data.pending.filter(j => j.status === "Cancel");
+                const jobs = data.allJobs || [];
 
-                pList.innerHTML = pending.length ? pending.map(j => createCard(j)).join('') : '<p class="loading">None</p>';
-                rList.innerHTML = rescheduled.length ? rescheduled.map(j => createCard(j)).join('') : '<p class="loading">None</p>';
-                cList.innerHTML = cancelled.length ? cancelled.map(j => createCard(j)).join('') : '<p class="loading">None</p>';
+                const pending = jobs.filter(j => j.status === "Pending");
+                const rescheduled = jobs.filter(j => j.status === "Rescheduled");
+                const cancelled = jobs.filter(j => j.status === "Cancel");
 
-            } catch (err) {
-                pList.innerHTML = '<p style="color:red; text-align:center;">Load failed. Try again.</p>';
+                document.getElementById('pendingList').innerHTML = pending.length ? pending.map(createCard).join('') : '<p class="loading">No pending jobs</p>';
+                document.getElementById('rescheduleList').innerHTML = rescheduled.length ? rescheduled.map(createCard).join('') : '<p class="loading">No rescheduled jobs</p>';
+                document.getElementById('cancelList').innerHTML = cancelled.length ? cancelled.map(createCard).join('') : '<p class="loading">No cancelled jobs</p>';
+            } catch (e) {
+                document.getElementById('pendingList').innerHTML = '<p class="loading" style="color:red;">Error loading jobs.</p>';
             }
         }
 
