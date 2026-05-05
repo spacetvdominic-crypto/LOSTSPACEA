@@ -2,102 +2,45 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Job - Space TV</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; margin: 0; }
-        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
-        label { font-weight: bold; display: block; margin-top: 15px; color: #333; font-size: 0.9rem; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-        input:focus, select:focus, textarea:focus { border-color: #0066cc; outline: none; }
-        .sub { background: #0066cc; color: white; border: none; padding: 15px; width: 100%; margin-top: 25px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1.1rem; }
-        .sub:disabled { background: #ccc; }
-        .back-btn { display: block; text-align: center; margin-top: 15px; color: #888; text-decoration: none; font-size: 0.9rem; }
+        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .sub { background: #0066cc; color: white; border: none; padding: 15px; width: 100%; margin-top: 25px; font-weight: bold; border-radius: 5px; }
     </style>
 </head>
 <body>
     <div class="box">
-        <!-- Data passed from the dashboard URL -->
-        <h2 id="cN" style="color:#0066cc; margin-top:0; margin-bottom:5px;"><%= query.name %></h2>
-        <p id="cT" style="font-weight:bold; margin-top:0; color:#555;">Tel: <%= query.tel %></p>
-        <p style="font-size: 0.85rem; color: #777;">Original Request: <%= query.prob %></p>
-
+        <h2 style="color:#0066cc; margin:0;"><%= query.name %></h2>
+        <p><b>Tel:</b> <%= query.tel %></p>
         <form id="f">
-            <label>Current Status</label>
-            <select id="s">
-                <option value="In Progress">In Progress</option>
-                <option value="Done" selected>Done</option>
-                <option value="Cancel">Cancel</option>
-            </select>
-
-            <label>Remarks (Select One)</label>
+            <label>Status</label>
+            <select id="s"><option value="Done">Done</option><option value="Rescheduled">Rescheduled</option></select>
+            <label>Remarks</label>
             <select id="r">
                 <option value="Completed Successfully">Completed Successfully</option>
-                <option value="Cancelled">Cancelled</option>
-                <option value="Return Job">Return Job</option>
-                <option value="Rescheduled">Rescheduled</option>
-                <option value="Already working">Already working</option>
-                <option value="Customer did not pick">Customer did not pick</option>
                 <option value="Faulty decoder">Faulty decoder</option>
+                <option value="Return Job">Return Job</option>
             </select>
-
-            <label>Additional Notes</label>
-            <textarea id="n" rows="3" placeholder="Enter any extra details here..."></textarea>
-
-            <label>Amount Charged (GHS)</label>
+            <label>Notes</label>
+            <textarea id="n" rows="2"></textarea>
+            <label>Amount (GHS)</label>
             <input type="number" id="a" value="0" step="0.01">
-
             <button type="submit" class="sub" id="btn">SUBMIT UPDATE</button>
-            <a href="/dashboard" class="back-btn">Back to Dashboard</a>
         </form>
     </div>
-
     <script>
-        const form = document.getElementById('f');
-        const btn = document.getElementById('btn');
-
-        form.onsubmit = async (e) => {
+        document.getElementById('f').onsubmit = async (e) => {
             e.preventDefault();
-            
-            // Disable button to prevent double clicks
-            btn.disabled = true;
-            btn.innerText = "SAVING...";
-
             const data = {
-                rowId: "<%= query.rowId %>",
-                name: "<%= query.name %>",
-                status: document.getElementById('s').value,
-                amount: document.getElementById('a').value,
-                remarks: document.getElementById('r').value,
-                notes: document.getElementById('n').value,
-                // Using 'username' from login, or 'installerName' as fallback
-                installer: localStorage.getItem('username') || localStorage.getItem('installerName') || "Space TV Tech"
+                rowId: "<%= query.rowId %>", name: "<%= query.name %>", status: s.value,
+                amount: a.value, remarks: r.value, notes: n.value,
+                installer: localStorage.getItem('username') || "Tech"
             };
-
-            // 1. Save data locally for the final-receipt.ejs to read
             localStorage.setItem('tempReceipt', JSON.stringify(data));
-
-            try {
-                // 2. Submit to your Render/Google server
-                const res = await fetch('/submit-job', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-
-                if(res.ok) {
-                    // 3. If "Done", go to receipt. Otherwise, go back to dashboard.
-                    window.location.href = data.status === "Done" ? '/receipt-flip' : '/dashboard';
-                } else {
-                    alert("Failed to save. Check your connection.");
-                    btn.disabled = false;
-                    btn.innerText = "SUBMIT UPDATE";
-                }
-            } catch (err) {
-                console.error(err);
-                alert("An error occurred. Please try again.");
-                btn.disabled = false;
-                btn.innerText = "SUBMIT UPDATE";
-            }
+            await fetch('/submit-job', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            window.location.href = s.value === "Done" ? '/receipt-flip' : '/dashboard';
         };
     </script>
 </body>
