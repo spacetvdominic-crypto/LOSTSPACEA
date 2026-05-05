@@ -2,43 +2,107 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Job</title>
+    <title>Work Job - Space TV</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
-        .box { background: white; padding: 20px; border-radius: 12px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
+        .container { background: white; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        .job-detail { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border-left: 4px solid #0066cc; }
+        
+        label { display: block; font-weight: bold; margin-top: 15px; color: #333; font-size: 0.85rem; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; }
+        input:focus, textarea:focus { border-color: #0066cc; }
+        
+        .btn-submit { width: 100%; padding: 16px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 25px; transition: background 0.3s; }
+        .btn-submit:disabled { background: #95a5a6; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #888; text-decoration: none; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>Job: <%= query.name %></h3>
-        <p>Location: <%= query.loc %></p>
-        <hr>
-        <label>Amount Charged (₵)</label>
-        <input type="number" id="amt" placeholder="e.g. 200">
-        <label>Status</label>
-        <select id="status">
-            <option value="Done">Done (Completed)</option>
-            <option value="Rescheduled">Rescheduled (Need to come back)</option>
-            <option value="Cancel">Cancel (Customer Refused)</option>
-        </select>
-        <label>Work Remarks</label>
-        <textarea id="rem" placeholder="What did you do?"></textarea>
-        <button class="btn" onclick="submit()">FINISH & GENERATE RECEIPT</button>
+
+    <div class="container">
+        <div class="header">
+            <h2 style="margin:0; color:#0066cc;">Complete Service</h2>
+        </div>
+
+        <div class="job-detail">
+            <strong>Customer:</strong> <%= query.name %><br>
+            <strong>Problem:</strong> <%= query.prob %><br>
+            <strong>Location:</strong> <%= query.loc %>
+        </div>
+
+        <form id="workForm">
+            <label>Final Amount Charged (GHS)</label>
+            <input type="number" id="amt" step="0.01" placeholder="0.00" required>
+
+            <label>Job Status</label>
+            <select id="status">
+                <option value="Done">Done (Fully Completed)</option>
+                <option value="Rescheduled">Rescheduled (Come Back Later)</option>
+                <option value="Cancel">Cancelled (Client Declined)</option>
+            </select>
+
+            <label>Work Done / Remarks</label>
+            <textarea id="remarks" rows="2" placeholder="e.g. Realigned dish and replaced LNB"><%= query.prob %></textarea>
+
+            <label>Internal Notes (Not on receipt)</label>
+            <textarea id="notes" rows="2" placeholder="Any extra info for the office..."></textarea>
+
+            <button type="button" class="btn-submit" onclick="processWork()" id="submitBtn">FINISH & VIEW RECEIPT</button>
+        </form>
+
+        <a href="/dashboard" class="back-link">Return to Dashboard</a>
     </div>
+
     <script>
-        async function submit() {
-            const data = {
-                rowId: "<%= query.rowId %>",
-                amount: document.getElementById('amt').value,
-                status: document.getElementById('status').value,
-                remarks: document.getElementById('rem').value,
-                installer: "Installer 1"
+        async function processWork() {
+            const btn = document.getElementById('submitBtn');
+            const amt = document.getElementById('amt').value;
+
+            if (!amt || amt <= 0) {
+                alert("Please enter a valid amount charged.");
+                return;
+            }
+
+            // Prepare the receipt data for localStorage
+            const receiptData = {
+                name: "<%= query.name %>",
+                installer: localStorage.getItem("username") || "Space TV Tech",
+                amount: amt,
+                remarks: document.getElementById('remarks').value,
+                notes: document.getElementById('notes').value
             };
-            const res = await fetch('/submit-job', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-            if(res.ok) {
-                window.location.href = `/receipt-flip?name=<%= query.name %>&amt=${data.amount}&prob=<%= query.prob %>&rem=${encodeURIComponent(data.remarks)}`;
+
+            // Save data locally so the Receipt Page can read it
+            localStorage.setItem('tempReceipt', JSON.stringify(receiptData));
+
+            btn.innerText = "SAVING TO DATABASE...";
+            btn.disabled = true;
+
+            try {
+                // Submit to Server (Updates Google Sheets)
+                const response = await fetch('/submit-job', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rowId: "<%= query.rowId %>",
+                        amount: receiptData.amount,
+                        status: document.getElementById('status').value,
+                        remarks: receiptData.remarks,
+                        installer: receiptData.installer
+                    })
+                });
+
+                if (response.ok) {
+                    // Success! Go to the receipt animation
+                    window.location.href = '/receipt-flip';
+                } else {
+                    throw new Error("Server error");
+                }
+            } catch (err) {
+                alert("Error saving work. Please check your internet connection.");
+                btn.innerText = "FINISH & VIEW RECEIPT";
+                btn.disabled = false;
             }
         }
     </script>
