@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-const GOOGLE_SCRIPT_URL = "YOUR_NEW_DEPLOYMENT_URL_HERE";
+const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
