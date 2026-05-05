@@ -7,33 +7,36 @@
         body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         .form-container { background: white; padding: 25px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .h { text-align: center; color: #0066cc; margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.9rem; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.8rem; }
         input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
         .sub-btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
-        .logout { text-align: center; margin-top: 20px; display: block; color: #888; text-decoration: none; font-size: 0.8rem; cursor: pointer; }
+        
+        /* NEW SECTION FOR VIEWING RECENT JOBS */
+        .recent-jobs { max-width: 500px; margin: 30px auto; }
+        .job-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #0066cc; position: relative; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .job-card h4 { margin: 0 0 5px 0; color: #333; }
+        .job-card p { margin: 2px 0; color: #666; }
+        .controls { margin-top: 10px; display: flex; gap: 10px; }
+        .ctrl-btn { flex: 1; padding: 8px; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .resched { background: #f39c12; color: white; }
+        .cancel { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
 
     <div class="form-container">
         <div class="h">
-            <h2 style="margin:0;">Front Desk Entry</h2>
-            <p style="font-size:0.8rem; color:#666;">Space TV Service Portal</p>
+            <h2 style="margin:0;">Job Entry</h2>
         </div>
 
         <label>Customer Name</label>
         <input type="text" id="cust" placeholder="Full Name">
-
         <label>Tel No.</label>
         <input type="tel" id="tel" placeholder="024 XXX XXXX">
-
         <label>Location</label>
         <input type="text" id="loc" placeholder="Street / Area">
-
-        <!-- UPDATED DROPDOWN FROM IMAGE -->
         <label>Technical Problem</label>
         <select id="prob">
-            <option value="" disabled selected>Select a problem type...</option>
             <option value="Full Installation">Full Installation</option>
             <option value="Signal Problem">Signal Problem</option>
             <option value="Dish Install">Dish Install</option>
@@ -44,22 +47,23 @@
             <option value="TV Installation">TV Installation</option>
             <option value="Dish Removal">Dish Removal</option>
         </select>
-
         <label>System Type</label>
         <select id="type">
             <option value="Dstv">Dstv</option>
             <option value="Gotv">Gotv</option>
-            <option value="Dstv/Gotv">Both (Dstv/Gotv)</option>
+            <option value="Dstv/Gotv">Both</option>
         </select>
 
-        <button class="sub-btn" onclick="saveJob()" id="btn">SAVE TO DATABASE</button>
-        <div class="logout" onclick="logout()">Logout Account</div>
+        <button class="sub-btn" onclick="saveJob()" id="btn">SAVE JOB</button>
+    </div>
+
+    <!-- NEW RECENT JOBS FEED -->
+    <div class="recent-jobs">
+        <h3 style="color:#555;">Recent Entries</h3>
+        <div id="jobList">Loading jobs...</div>
     </div>
 
     <script>
-        // Security Gate
-        if (localStorage.getItem("userRole") !== "Office") { window.location.href = "/"; }
-
         async function saveJob() {
             const btn = document.getElementById('btn');
             const data = {
@@ -69,39 +73,49 @@
                 prob: document.getElementById('prob').value,
                 type: document.getElementById('type').value
             };
-
-            if(!data.customer || !data.tel || !data.prob) {
-                alert("Please fill in Name, Phone, and select a Technical Problem!");
-                return;
-            }
-
-            btn.innerText = "SAVING...";
-            btn.disabled = true;
-
-            try {
-                const url = `/api/add-job?customer=${encodeURIComponent(data.customer)}&tel=${encodeURIComponent(data.tel)}&loc=${encodeURIComponent(data.loc)}&prob=${encodeURIComponent(data.prob)}&type=${encodeURIComponent(data.type)}`;
-                const res = await fetch(url);
-                
-                if(res.ok) {
-                    alert("Job Saved Successfully!");
-                    // Clear the form for next entry
-                    document.getElementById('cust').value = "";
-                    document.getElementById('tel').value = "";
-                    document.getElementById('loc').value = "";
-                    document.getElementById('prob').selectedIndex = 0;
-                }
-            } catch(e) { 
-                alert("Error connecting to server."); 
-            } finally {
-                btn.innerText = "SAVE TO DATABASE";
-                btn.disabled = false;
+            if(!data.customer || !data.tel) return alert("Fill Name and Tel!");
+            
+            btn.innerText = "SAVING..."; btn.disabled = true;
+            const res = await fetch(`/api/add-job?customer=${encodeURIComponent(data.customer)}&tel=${data.tel}&loc=${encodeURIComponent(data.loc)}&prob=${encodeURIComponent(data.prob)}&type=${data.type}`);
+            if(res.ok) { 
+                alert("Job Saved!"); 
+                location.reload(); 
             }
         }
 
-        function logout() { 
-            localStorage.clear(); 
-            window.location.href = "/"; 
+        async function loadRecent() {
+            const res = await fetch('/api/jobs');
+            const data = await res.json();
+            const list = document.getElementById('jobList');
+            list.innerHTML = "";
+            
+            // Only show Pending or Rescheduled jobs for the Front Desk to manage
+            data.pending.concat(data.rescheduled).forEach(j => {
+                list.innerHTML += `
+                    <div class="job-card">
+                        <h4>${j.customer}</h4>
+                        <p><strong>Loc:</strong> ${j.loc} | <strong>Tel:</strong> ${j.tel}</p>
+                        <p><strong>Service:</strong> ${j.prob}</p>
+                        <div class="controls">
+                            <button class="ctrl-btn resched" onclick="updateJob('${j.rowId}', 'Rescheduled')">RESCHEDULE</button>
+                            <button class="ctrl-btn cancel" onclick="updateJob('${j.rowId}', 'Cancel')">CANCEL JOB</button>
+                        </div>
+                    </div>`;
+            });
         }
+
+        async function updateJob(rowId, status) {
+            if(!confirm(`Change job status to ${status}?`)) return;
+            // Re-using the installer submit endpoint to update status
+            await fetch('/submit-job', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ rowId: rowId, status: status, amount: 0, remarks: "Updated by Front Desk", installer: "Front Desk" })
+            });
+            loadRecent();
+        }
+
+        loadRecent();
     </script>
 </body>
 </html>
