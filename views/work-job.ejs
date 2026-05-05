@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Job</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+        .box { background: white; padding: 20px; border-radius: 12px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>Job: <%= query.name %></h3>
+        <p>Location: <%= query.loc %></p>
+        <hr>
+        <label>Amount Charged (₵)</label>
+        <input type="number" id="amt" placeholder="e.g. 200">
+        <label>Status</label>
+        <select id="status">
+            <option value="Done">Done (Completed)</option>
+            <option value="Rescheduled">Rescheduled (Need to come back)</option>
+            <option value="Cancel">Cancel (Customer Refused)</option>
+        </select>
+        <label>Work Remarks</label>
+        <textarea id="rem" placeholder="What did you do?"></textarea>
+        <button class="btn" onclick="submit()">FINISH & GENERATE RECEIPT</button>
+    </div>
+    <script>
+        async function submit() {
+            const data = {
+                rowId: "<%= query.rowId %>",
+                amount: document.getElementById('amt').value,
+                status: document.getElementById('status').value,
+                remarks: document.getElementById('rem').value,
+                installer: "Installer 1"
+            };
+            const res = await fetch('/submit-job', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            if(res.ok) {
+                window.location.href = `/receipt-flip?name=<%= query.name %>&amt=${data.amount}&prob=<%= query.prob %>&rem=${encodeURIComponent(data.remarks)}`;
+            }
+        }
+    </script>
+</body>
+</html>

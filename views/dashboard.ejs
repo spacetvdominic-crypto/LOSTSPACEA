@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installer Portal</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-top: 4px solid #0066cc; position: relative; }
+        .btn { display: block; width: 100%; padding: 12px; background: #0066cc; color: white; border: none; border-radius: 5px; font-weight: bold; text-decoration: none; text-align: center; }
+        .cancel-badge { position: absolute; top: 10px; right: 10px; background: red; color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align:center;">My Assignments</h2>
+    <div id="list">Loading...</div>
+    <script>
+        async function load() {
+            const res = await fetch('/api/jobs');
+            const data = await res.json();
+            const list = document.getElementById('list');
+            list.innerHTML = "";
+            data.pending.concat(data.rescheduled).forEach(j => {
+                const isC = j.status === "Cancel";
+                list.innerHTML += `
+                    <div class="card" style="border-color: ${isC ? '#999' : '#0066cc'}">
+                        ${isC ? '<span class="cancel-badge">CANCELLED</span>' : ''}
+                        <h3>${j.customer}</h3>
+                        <p>${j.loc}</p>
+                        <p><i>${j.prob}</i></p>
+                        <button onclick="window.location.href='/work-job?rowId=${j.rowId}&name=${encodeURIComponent(j.customer)}&tel=${j.tel}&loc=${encodeURIComponent(j.loc)}&prob=${encodeURIComponent(j.prob)}'" 
+                                class="btn" ${isC ? 'disabled style="background:#999"' : ''}>
+                                ${isC ? 'ON HOLD' : 'START JOB'}
+                        </button>
+                    </div>`;
+            });
+        }
+        load();
+    </script>
+</body>
+</html>

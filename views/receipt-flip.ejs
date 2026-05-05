@@ -1,0 +1,11 @@
+<body style="background:#0066cc; display:flex; justify-content:center; align-items:center; height:100vh; color:white; font-family:sans-serif;">
+    <div style="text-align:center;">
+        <h1>Processing...</h1>
+        <p>Generating your Space TV Receipt</p>
+    </div>
+    <script>
+        setTimeout(() => {
+            window.location.href = "/final-receipt<%= Object.keys(query).length ? '?' + new URLSearchParams(query).toString() : '' %>";
+        }, 2000);
+    </script>
+</body>

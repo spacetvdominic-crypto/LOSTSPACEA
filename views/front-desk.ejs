@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Front Desk - Space TV</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .form-container { background: white; padding: 25px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .h { text-align: center; color: #0066cc; margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.9rem; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        .sub-btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .logout { text-align: center; margin-top: 20px; display: block; color: #888; text-decoration: none; font-size: 0.8rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <div class="h">
+            <h2 style="margin:0;">Front Desk Entry</h2>
+            <p style="font-size:0.8rem; color:#666;">Space TV Service Portal</p>
+        </div>
+
+        <label>Customer Name</label>
+        <input type="text" id="cust" placeholder="Full Name">
+
+        <label>Tel No.</label>
+        <input type="tel" id="tel" placeholder="024 XXX XXXX">
+
+        <label>Location</label>
+        <input type="text" id="loc" placeholder="Street / Area">
+
+        <!-- UPDATED DROPDOWN FROM IMAGE -->
+        <label>Technical Problem</label>
+        <select id="prob">
+            <option value="" disabled selected>Select a problem type...</option>
+            <option value="Full Installation">Full Installation</option>
+            <option value="Signal Problem">Signal Problem</option>
+            <option value="Dish Install">Dish Install</option>
+            <option value="Relocation">Relocation</option>
+            <option value="Xtraview setup">Xtraview setup</option>
+            <option value="Full install w/ Xtraview">Full install w/ Xtraview</option>
+            <option value="Antenna Installation">Antenna Installation</option>
+            <option value="TV Installation">TV Installation</option>
+            <option value="Dish Removal">Dish Removal</option>
+        </select>
+
+        <label>System Type</label>
+        <select id="type">
+            <option value="Dstv">Dstv</option>
+            <option value="Gotv">Gotv</option>
+            <option value="Dstv/Gotv">Both (Dstv/Gotv)</option>
+        </select>
+
+        <button class="sub-btn" onclick="saveJob()" id="btn">SAVE TO DATABASE</button>
+        <div class="logout" onclick="logout()">Logout Account</div>
+    </div>
+
+    <script>
+        // Security Gate
+        if (localStorage.getItem("userRole") !== "Office") { window.location.href = "/"; }
+
+        async function saveJob() {
+            const btn = document.getElementById('btn');
+            const data = {
+                customer: document.getElementById('cust').value,
+                tel: document.getElementById('tel').value,
+                loc: document.getElementById('loc').value,
+                prob: document.getElementById('prob').value,
+                type: document.getElementById('type').value
+            };
+
+            if(!data.customer || !data.tel || !data.prob) {
+                alert("Please fill in Name, Phone, and select a Technical Problem!");
+                return;
+            }
+
+            btn.innerText = "SAVING...";
+            btn.disabled = true;
+
+            try {
+                const url = `/api/add-job?customer=${encodeURIComponent(data.customer)}&tel=${encodeURIComponent(data.tel)}&loc=${encodeURIComponent(data.loc)}&prob=${encodeURIComponent(data.prob)}&type=${encodeURIComponent(data.type)}`;
+                const res = await fetch(url);
+                
+                if(res.ok) {
+                    alert("Job Saved Successfully!");
+                    // Clear the form for next entry
+                    document.getElementById('cust').value = "";
+                    document.getElementById('tel').value = "";
+                    document.getElementById('loc').value = "";
+                    document.getElementById('prob').selectedIndex = 0;
+                }
+            } catch(e) { 
+                alert("Error connecting to server."); 
+            } finally {
+                btn.innerText = "SAVE TO DATABASE";
+                btn.disabled = false;
+            }
+        }
+
+        function logout() { 
+            localStorage.clear(); 
+            window.location.href = "/"; 
+        }
+    </script>
+</body>
+</html>
